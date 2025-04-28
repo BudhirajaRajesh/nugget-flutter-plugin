@@ -11,7 +11,14 @@ class MethodChannelNuggetFlutterPlugin extends NuggetFlutterPluginPlatform {
 
   @override
   Future<String?> getPlatformVersion() async {
-    final version = await methodChannel.invokeMethod<String>('getPlatformVersion');
+    final version = await methodChannel.invokeMethod<String>(
+      'getPlatformVersion',
+    );
     return version;
+  }
+
+  @override
+  void openChatSDK() {
+    methodChannel.invokeMethod<String>('openChatSDK');
   }
 }

@@ -8,7 +8,8 @@ abstract class NuggetFlutterPluginPlatform extends PlatformInterface {
 
   static final Object _token = Object();
 
-  static NuggetFlutterPluginPlatform _instance = MethodChannelNuggetFlutterPlugin();
+  static NuggetFlutterPluginPlatform _instance =
+      MethodChannelNuggetFlutterPlugin();
 
   /// The default instance of [NuggetFlutterPluginPlatform] to use.
   ///
@@ -25,5 +26,9 @@ abstract class NuggetFlutterPluginPlatform extends PlatformInterface {
 
   Future<String?> getPlatformVersion() {
     throw UnimplementedError('platformVersion() has not been implemented.');
+  }
+
+  void openChatSDK() {
+    throw UnimplementedError('openChatSDK() has not been implemented');
   }
 }

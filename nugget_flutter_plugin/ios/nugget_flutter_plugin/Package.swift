@@ -6,16 +6,20 @@ import PackageDescription
 let package = Package(
     name: "nugget_flutter_plugin",
     platforms: [
-        .iOS("12.0")
+        .iOS("14.0")
     ],
     products: [
         .library(name: "nugget-flutter-plugin", targets: ["nugget_flutter_plugin"])
     ],
-    dependencies: [],
+    dependencies: [
+        .package(url: "https://github.com/BudhirajaRajesh/NuggetSDK.git", from: "1.1.3"),
+    ],
     targets: [
         .target(
             name: "nugget_flutter_plugin",
-            dependencies: [],
+            dependencies: [
+                .product(name: "NuggetSDK", package: "NuggetSDK"),
+            ],
             resources: [
                 // If your plugin requires a privacy manifest, for example if it uses any required
                 // reason APIs, update the PrivacyInfo.xcprivacy file to describe your plugin's
