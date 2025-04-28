@@ -1,5 +1,8 @@
-/// A Calculator.
-class Calculator {
-  /// Returns [value] plus 1.
-  int addOne(int value) => value + 1;
+
+import 'nugget_flutter_plugin_platform_interface.dart';
+
+class NuggetFlutterPlugin {
+  Future<String?> getPlatformVersion() {
+    return NuggetFlutterPluginPlatform.instance.getPlatformVersion();
+  }
 }
