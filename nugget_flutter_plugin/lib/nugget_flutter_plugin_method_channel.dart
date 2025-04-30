@@ -10,8 +10,12 @@ class MethodChannelNuggetFlutterPlugin extends NuggetFlutterPluginPlatform {
   final methodChannel = const MethodChannel('nugget_flutter_plugin');
 
   @override
-  void openChatWithCustomDeeplink({required String clientToken, required String customDeeplink}) {
-    methodChannel.invokeMethod<String>('openChatWithCustomDeeplink', {
+  // Implementation of the platform interface method.
+  // Returns Future<void> because invokeMethod is asynchronous.
+  // `await` ensures the platform call is sent before the Future completes,
+  // and allows potential PlatformExceptions to be propagated.
+  Future<void> openChatWithCustomDeeplink({required String clientToken, required String customDeeplink}) async {
+    await methodChannel.invokeMethod('openChatWithCustomDeeplink', {
       'clientToken': clientToken,
       'customDeeplink': customDeeplink,
     });

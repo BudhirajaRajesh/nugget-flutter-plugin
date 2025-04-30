@@ -24,7 +24,12 @@ abstract class NuggetFlutterPluginPlatform extends PlatformInterface {
     _instance = instance;
   }
 
-  void openChatWithCustomDeeplink({required String clientToken, required String customDeeplink}) {
+  /// Opens the chat interface using a specific client token and deeplink.
+  ///
+  /// Returns a [Future<void>] because platform channel calls are asynchronous.
+  /// This allows the caller to `await` the completion of the call and handle
+  /// potential [PlatformException]s using `try-catch`.
+  Future<void> openChatWithCustomDeeplink({required String clientToken, required String customDeeplink}) {
     throw UnimplementedError('openChatWithCustomDeeplink() has not been implemented');
   }
 }
