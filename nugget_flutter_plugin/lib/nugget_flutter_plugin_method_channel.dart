@@ -10,15 +10,10 @@ class MethodChannelNuggetFlutterPlugin extends NuggetFlutterPluginPlatform {
   final methodChannel = const MethodChannel('nugget_flutter_plugin');
 
   @override
-  Future<String?> getPlatformVersion() async {
-    final version = await methodChannel.invokeMethod<String>(
-      'getPlatformVersion',
-    );
-    return version;
-  }
-
-  @override
-  void openChatSDK() {
-    methodChannel.invokeMethod<String>('openChatSDK');
+  void openChatWithCustomDeeplink({required String clientToken, required String customDeeplink}) {
+    methodChannel.invokeMethod<String>('openChatWithCustomDeeplink', {
+      'clientToken': clientToken,
+      'customDeeplink': customDeeplink,
+    });
   }
 }

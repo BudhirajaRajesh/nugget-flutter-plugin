@@ -24,11 +24,7 @@ abstract class NuggetFlutterPluginPlatform extends PlatformInterface {
     _instance = instance;
   }
 
-  Future<String?> getPlatformVersion() {
-    throw UnimplementedError('platformVersion() has not been implemented.');
-  }
-
-  void openChatSDK() {
-    throw UnimplementedError('openChatSDK() has not been implemented');
+  void openChatWithCustomDeeplink({required String clientToken, required String customDeeplink}) {
+    throw UnimplementedError('openChatWithCustomDeeplink() has not been implemented');
   }
 }
