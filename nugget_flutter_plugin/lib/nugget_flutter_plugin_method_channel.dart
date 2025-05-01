@@ -29,18 +29,25 @@ class MethodChannelNuggetFlutterPlugin extends NuggetFlutterPluginPlatform {
 
   @override
   Future<void> initialize({
-    required String apiKey,
     NuggetThemeData? theme,
     NuggetFontData? font,
   }) async {
     // Prepare arguments map, including JSON maps for theme/font if provided
     final Map<String, dynamic> arguments = {
-      'apiKey': apiKey,
       'theme': theme?.toJson(), // Call toJson() if theme is not null
       'font': font?.toJson(),   // Call toJson() if font is not null
     };
     arguments.removeWhere((key, value) => value == null);
     await methodChannel.invokeMethod('initialize', arguments);
+  }
+
+  @override
+  Future<void> openChatWithCustomDeeplink({required String customDeeplink}) async {
+    // Prepare arguments map
+    final Map<String, dynamic> arguments = {
+      'customDeeplink': customDeeplink,
+    };
+    await methodChannel.invokeMethod('openChatWithCustomDeeplink', arguments);
   }
 
   @override

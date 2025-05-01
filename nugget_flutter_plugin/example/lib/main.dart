@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 // Import the main plugin file, which now exports the handler
 import 'package:nugget_flutter_plugin/nugget_flutter_plugin.dart';
 
@@ -23,64 +24,41 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   final _plugin = NuggetFlutterPlugin();
-  final _apiKeyController = TextEditingController(text: "YOUR_API_KEY"); // TODO: Replace with your key
-  final _deeplinkController = TextEditingController(text: "optional_deeplink_path");
+  final _deeplinkController = TextEditingController();
+  static const _deeplinkPrefKey = 'saved_deeplink';
 
   bool _isInitialized = false;
   String _status = 'SDK Not Initialized';
-  final List<String> _callbackMessages = [];
-  StreamSubscription? _ticketSuccessSubscription;
-  StreamSubscription? _ticketFailureSubscription;
-  // TODO: Add subscriptions for auth and other streams if needed
+  // Callbacks state and listeners removed
 
   @override
   void initState() {
     super.initState();
-    _listenToCallbacks();
+    _loadSavedDeeplink();
+    // _listenToCallbacks(); // Call removed
   }
 
   @override
   void dispose() {
-    _apiKeyController.dispose();
     _deeplinkController.dispose();
-    _ticketSuccessSubscription?.cancel();
-    _ticketFailureSubscription?.cancel();
-    // TODO: Cancel other subscriptions
+    // Subscriptions cancellation removed
     super.dispose();
   }
 
-  void _listenToCallbacks() {
-    _ticketSuccessSubscription = _plugin.onTicketCreationSucceeded.listen((id) {
-      if (mounted) {
-        setState(() {
-          _callbackMessages.add('Ticket Success: ID=$id');
-        });
-      }
-    });
+  // _listenToCallbacks method removed
 
-    _ticketFailureSubscription = _plugin.onTicketCreationFailed.listen((error) {
-      if (mounted) {
-        setState(() {
-          _callbackMessages.add('Ticket Failed: ${error ?? "Unknown error"}');
-        });
-      }
-    });
-
-    // TODO: Listen to auth streams (onTokenUpdated, onPermissionStatusUpdated)
-    // You'll likely need to implement the actual auth logic in the 
-    // NuggetPluginNativeCallbackHandler when those methods are invoked
+  Future<void> _loadSavedDeeplink() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedDeeplink = prefs.getString(_deeplinkPrefKey);
+    if (savedDeeplink != null && mounted) {
+      _deeplinkController.text = savedDeeplink;
+    }
   }
 
   Future<void> _initializeSdk() async {
-    if (_apiKeyController.text.isEmpty || _apiKeyController.text == "YOUR_API_KEY") {
-        setState(() {
-          _status = 'Please enter a valid API Key';
-        });
-        return;
-    }
     setState(() {
       _status = 'Initializing...';
-      _callbackMessages.clear(); // Clear previous messages
+      // _callbackMessages.clear(); // Removed
     });
     try {
       // Example Theme/Font data (replace with actual data if needed)
@@ -91,7 +69,6 @@ class _MyAppState extends State<MyApp> {
       // final font = NuggetFontData(...); // Define if needed
 
       await _plugin.initialize(
-        apiKey: _apiKeyController.text,
         theme: theme,
         // font: font,
       );
@@ -111,70 +88,102 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
+  // Updated to handle initialization check and call
+  Future<void> _openChatModally(BuildContext scaffoldContext) async {
+    // Check if initialized, if not, try to initialize
+    if (!_isInitialized) {
+      ScaffoldMessenger.of(scaffoldContext).showSnackBar(
+        const SnackBar(content: Text('SDK not initialized. Attempting initialization...'), duration: Duration(seconds: 1)),
+      );
+      // Wait for initialization attempt to complete
+      await _initializeSdk(); 
+
+      // Check again after initialization attempt
+      if (!_isInitialized) {
+         ScaffoldMessenger.of(scaffoldContext).showSnackBar(
+           const SnackBar(content: Text('Initialization failed. Cannot open chat.'), duration: Duration(seconds: 2)),
+         );
+         return; // Stop if initialization failed
+      }
+      // If we reach here, initialization was successful
+      ScaffoldMessenger.of(scaffoldContext).showSnackBar(
+         const SnackBar(content: Text('Initialization successful. Opening chat...'), duration: Duration(seconds: 1)),
+       );
+       // Add a small delay for the snackbar to be visible before navigation/presentation
+       await Future.delayed(const Duration(milliseconds: 800)); 
+    }
+
+    // --- Proceed with opening chat (if initialized) ---
+    final deeplink = _deeplinkController.text.trim();
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_deeplinkPrefKey, deeplink);
+
+    // No need for another "Opening chat..." SnackBar here as the init one covers it
+    // ScaffoldMessenger.of(scaffoldContext).showSnackBar(
+    //   SnackBar(content: Text('Opening chat with deeplink: "$deeplink"...')),
+    // );
+    try {
+      await _plugin.openChatWithCustomDeeplink(customDeeplink: deeplink);
+      // Optionally show success message
+      // ScaffoldMessenger.of(scaffoldContext).showSnackBar(
+      //   const SnackBar(content: Text('Chat open request sent.')),
+      // );
+    } catch (e) {
+      // Show error message
+      if (mounted) { 
+        ScaffoldMessenger.of(scaffoldContext).showSnackBar(
+          SnackBar(content: Text('Error opening chat: $e')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Start of MaterialApp widget
     return MaterialApp(
+      // MaterialApp has a `home` property
       home: Scaffold(
+        // Scaffold has an `appBar` property
         appBar: AppBar(
           title: const Text('Nugget Plugin Example'),
-        ),
-        body: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              TextField(
-                controller: _apiKeyController,
-                decoration: const InputDecoration(
-                  labelText: 'API Key',
-                  hintText: 'Enter your Nugget API Key',
-                ),
-                enabled: !_isInitialized, // Disable after init
-              ),
-              const SizedBox(height: 10),
-              ElevatedButton(
-                onPressed: _isInitialized ? null : _initializeSdk,
-                child: const Text('Initialize SDK'),
-              ),
-              const SizedBox(height: 10),
-              Text('Status: $_status'),
-              const SizedBox(height: 10),
-              const Text('Callbacks:'),
-              Expanded(
-                flex: 1,
-                child: Container(
-                  color: Colors.grey[200],
-                  child: ListView.builder(
-                     itemCount: _callbackMessages.length,
-                     itemBuilder: (context, index) => Text(_callbackMessages[index]),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
-              const Text('Native Chat View:'),
-              // Conditionally display the Native View
-              if (_isInitialized)
-                Expanded(
-                  flex: 2,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.blueAccent)
+        ), // End of appBar
+        // Scaffold has a `body` property
+        // Use Builder to get the correct context for ScaffoldMessenger
+        body: Builder(
+          // Builder has a `builder` property which is a function
+          builder: (builderContext) { // Use a different name like builderContext
+            // This function MUST return a Widget
+            return Padding(
+              padding: const EdgeInsets.all(16.0),
+              // Padding has a `child` property
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                // Column has a `children` property which is a List<Widget>
+                children: [
+                  TextField(
+                    controller: _deeplinkController,
+                    decoration: const InputDecoration(
+                      labelText: 'Custom Deeplink (Optional)',
+                      hintText: 'e.g., /profile or leave blank',
                     ),
-                    // Example with deeplink
-                    // child: NuggetChatView(initialDeeplink: "some/path/here"),
-                    // Example without deeplink
-                    child: const NuggetChatView(), 
-                  ),
-                )
-              else
-                const Expanded(
-                  flex: 2,
-                  child: Center(child: Text('Initialize SDK to show Chat View')),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
+                  ), // End of TextField
+                  const SizedBox(height: 10),
+                  ElevatedButton(
+                    // Use the context from the Builder (builderContext)
+                    // Use a lambda to match the required void Function()?
+                    onPressed: () => _openChatModally(builderContext),
+                    child: const Text('Open Chat (via Deeplink)'),
+                  ), // End of ElevatedButton (Open Chat)
+                  const SizedBox(height: 10),
+                  Text('Status: $_status'),
+                ], // End of children list for Column
+              ), // End of Column
+            ); // End of Padding (Return value for Builder's builder function)
+          }, // End of builder function for Builder
+        ), // End of Builder widget
+      ), // End of Scaffold widget
+    ); // End of MaterialApp widget
+  } // End of build method
+} // End of _MyAppState class

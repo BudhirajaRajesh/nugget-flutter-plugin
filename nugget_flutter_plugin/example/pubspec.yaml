@@ -25,6 +25,9 @@ dependencies:
     # the parent directory to use the current plugin's version.
     path: ../
 
+  # Add shared_preferences
+  shared_preferences: ^2.2.3 # Use latest version
+
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8

@@ -44,7 +44,6 @@ abstract class NuggetFlutterPluginPlatform extends PlatformInterface {
   /// Requires an [apiKey]. Optional [theme] and [font] data can be provided
   /// for UI customization.
   Future<void> initialize({
-    required String apiKey,
     NuggetThemeData? theme,
     NuggetFontData? font,
   }) {
@@ -69,6 +68,16 @@ abstract class NuggetFlutterPluginPlatform extends PlatformInterface {
   /// Stream providing an optional error message when ticket creation fails.
   Stream<String?> get onTicketCreationFailed {
       throw UnimplementedError('onTicketCreationFailed has not been implemented.');
+  }
+
+  /// Opens the Nugget chat UI modally, optionally navigating to a specific
+  /// state defined by the [customDeeplink].
+  /// 
+  /// This method presents the native UIViewController directly.
+  /// 
+  /// If the SDK is not initialized, this will likely fail.
+  Future<void> openChatWithCustomDeeplink({required String customDeeplink}) {
+    throw UnimplementedError('openChatWithCustomDeeplink() has not been implemented');
   }
 }
 

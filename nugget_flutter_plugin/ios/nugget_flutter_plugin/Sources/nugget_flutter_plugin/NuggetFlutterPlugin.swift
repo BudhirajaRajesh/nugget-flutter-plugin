@@ -19,6 +19,14 @@ public class NuggetFlutterPlugin: NSObject, FlutterPlugin,
     // Store theme/font data if needed for delegates
     var themeDataMap: [String: Any]?
     var fontDataMap: [String: Any]?
+    
+    // --- ADDED: Stream Handlers ---
+    private let ticketSuccessHandler = TicketStreamHandler()
+    private let ticketFailureHandler = TicketStreamHandler()
+    // TODO: Add handlers for token and permission status later
+    // private let tokenHandler = BasicStreamHandler<String>()
+    // private let permissionHandler = BasicStreamHandler<Int>()
+    // --- END ADDED ---
 
     // Initializer to store the channel
     init(channel: FlutterMethodChannel) {
@@ -32,6 +40,21 @@ public class NuggetFlutterPlugin: NSObject, FlutterPlugin,
         let instance = NuggetFlutterPlugin(channel: channel)
         registrar.addMethodCallDelegate(instance, channel: channel)
 
+        // --- ADDED: Event Channels for Native -> Dart streams ---
+        let ticketSuccessEventChannel = FlutterEventChannel(name: "nugget_flutter_plugin/onTicketCreationSucceeded", binaryMessenger: registrar.messenger())
+        ticketSuccessEventChannel.setStreamHandler(instance.ticketSuccessHandler)
+        
+        let ticketFailureEventChannel = FlutterEventChannel(name: "nugget_flutter_plugin/onTicketCreationFailed", binaryMessenger: registrar.messenger())
+        ticketFailureEventChannel.setStreamHandler(instance.ticketFailureHandler)
+        
+        // TODO: Register other event channels (token, permission) here
+        // let tokenEventChannel = FlutterEventChannel(name: "nugget_flutter_plugin/onTokenUpdated", binaryMessenger: registrar.messenger())
+        // tokenEventChannel.setStreamHandler(instance.tokenHandler)
+        // 
+        // let permissionEventChannel = FlutterEventChannel(name: "nugget_flutter_plugin/onPermissionStatusUpdated", binaryMessenger: registrar.messenger())
+        // permissionEventChannel.setStreamHandler(instance.permissionHandler)
+        // --- END ADDED ---
+
         // Register the Platform View Factory
         let viewFactory = NuggetChatViewFactory(messenger: registrar.messenger(), pluginInstance: instance)
         registrar.register(viewFactory, withId: "com.yourcompany.nugget/chat_view") // Must match viewType in Dart
@@ -42,6 +65,8 @@ public class NuggetFlutterPlugin: NSObject, FlutterPlugin,
         switch call.method {
         case "initialize":
             handleInitialize(call: call, result: result)
+        case "openChatWithCustomDeeplink":
+            handleOpenChatWithCustomDeeplink(call: call, result: result)
         default:
             result(FlutterMethodNotImplemented)
         }
@@ -50,9 +75,10 @@ public class NuggetFlutterPlugin: NSObject, FlutterPlugin,
     // --- Method Call Handlers --- 
 
     private func handleInitialize(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        guard let args = call.arguments as? [String: Any], 
-              let apiKey = args["apiKey"] as? String else {
-            result(FlutterError(code: "INVALID_ARGS", message: "Missing required argument: apiKey", details: nil))
+        // Ensure args is a dictionary, but don't require apiKey
+        guard let args = call.arguments as? [String: Any] else {
+            // Return a generic invalid arguments error if casting fails
+            result(FlutterError(code: "INVALID_ARGS", message: "Invalid arguments received for initialize method", details: nil))
             return
         }
         
@@ -83,6 +109,71 @@ public class NuggetFlutterPlugin: NSObject, FlutterPlugin,
         } else {
              print("NuggetFlutterPlugin Swift: NuggetSDK Initialization Failed.")
             result(FlutterError(code: "INIT_FAILED", message: "Native NuggetSDK initialization returned nil", details: nil))
+        }
+    }
+
+    private func handleOpenChatWithCustomDeeplink(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        guard let args = call.arguments as? [String: Any],
+              let customDeeplink = args["customDeeplink"] as? String else {
+            result(FlutterError(code: "INVALID_ARGS", message: "Missing required argument: customDeeplink", details: nil))
+            return
+        }
+        
+        print("NuggetFlutterPlugin Swift: Opening chat with deeplink: \(customDeeplink)")
+
+        guard let factory = self.nuggetFactory else {
+             print("NuggetFlutterPlugin Swift: Error - NuggetFactory is not initialized.")
+            result(FlutterError(code: "NOT_INITIALIZED", message: "Nugget SDK is not initialized. Call initialize first.", details: nil))
+            return
+        }
+
+        // Get the chat view controller from the SDK factory
+        // Assuming the method exists and returns a UIViewController
+        guard let chatViewController = factory.contentViewController(deeplink: customDeeplink) else {
+            print("NuggetFlutterPlugin Swift: Error - Failed to get contentViewController from NuggetFactory.")
+            result(FlutterError(code: "FACTORY_ERROR", message: "Failed to retrieve chat view controller from NuggetFactory", details: nil))
+            return
+        }
+        
+        // Present the view controller
+        DispatchQueue.main.async {
+            guard let rootViewController = UIApplication.shared.windows.first(where: { $0.isKeyWindow })?.rootViewController else {
+                 print("NuggetFlutterPlugin Swift: Error - Could not find root view controller.")
+                result(FlutterError(code: "UI_ERROR", message: "Could not find root view controller to present/push chat", details: nil))
+                return
+            }
+            
+            // Attempt to find the topmost navigation controller
+            var topNavController: UINavigationController? = nil
+            var currentVC = rootViewController
+            while let presented = currentVC.presentedViewController {
+                currentVC = presented
+            }
+            
+            if let navController = currentVC as? UINavigationController {
+                topNavController = navController
+            } else if let tabBarController = currentVC as? UITabBarController, 
+                      let selectedNavController = tabBarController.selectedViewController as? UINavigationController {
+                topNavController = selectedNavController
+            } else {
+                // If root itself isn't a nav controller, check its children (might be embedded)
+                topNavController = currentVC.children.compactMap { $0 as? UINavigationController }.first
+            }
+
+            // Push if a navigation controller is found, otherwise present modally
+            if let navController = topNavController {
+                 print("NuggetFlutterPlugin Swift: Found UINavigationController. Pushing chat view controller...")
+                navController.pushViewController(chatViewController, animated: true)
+                result(nil) // Indicate success back to Dart
+            } else {
+                 print("NuggetFlutterPlugin Swift: No UINavigationController found. Presenting modally as fallback...")
+                // Fallback to modal presentation
+                chatViewController.modalPresentationStyle = .fullScreen // Or .automatic, .pageSheet etc.
+                rootViewController.present(chatViewController, animated: true) {
+                     print("NuggetFlutterPlugin Swift: Chat view controller presented modally (fallback).")
+                    result(nil) // Indicate success back to Dart (even though it was modal)
+                }
+            }
         }
     }
 
@@ -145,13 +236,13 @@ public class NuggetFlutterPlugin: NSObject, FlutterPlugin,
 
     // MARK: - NuggetTicketCreationDelegate Implementation
     public func ticketCreationSucceeded(with conversationID: String) {
-        print("NuggetFlutterPlugin Swift: Delegate ticketCreationSucceeded. Invoking Dart...")
-        channel.invokeMethod("onTicketCreationSucceeded", arguments: conversationID)
+        print("NuggetFlutterPlugin Swift: Delegate ticketCreationSucceeded. Sending event to Dart...")
+        ticketSuccessHandler.sendEvent(data: conversationID)
     }
 
     public func ticketCreationFailed(withError errorMessage: String?) {
-        print("NuggetFlutterPlugin Swift: Delegate ticketCreationFailed. Invoking Dart...")
-        channel.invokeMethod("onTicketCreationFailed", arguments: errorMessage)
+        print("NuggetFlutterPlugin Swift: Delegate ticketCreationFailed. Sending event to Dart...")
+        ticketFailureHandler.sendEvent(data: errorMessage)
     }
     
     // MARK: - NuggetThemeProviderDelegate Implementation 
@@ -377,3 +468,37 @@ extension NuggetFontSizes {
         }
     }
 }
+
+// --- ADDED: Generic Stream Handler ---
+/// A basic stream handler that stores the event sink and provides a method to send events.
+class TicketStreamHandler: NSObject, FlutterStreamHandler {
+    private var eventSink: FlutterEventSink?
+
+    /// Called when Flutter starts listening.
+    func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
+        print("TicketStreamHandler: onListen called")
+        self.eventSink = events
+        return nil // No error
+    }
+
+    /// Called when Flutter stops listening.
+    func onCancel(withArguments arguments: Any?) -> FlutterError? {
+        print("TicketStreamHandler: onCancel called")
+        self.eventSink = nil
+        return nil // No error
+    }
+
+    /// Sends data to the Flutter side via the event sink.
+    /// Make sure `onListen` has been called before sending events.
+    func sendEvent(data: Any?) {
+        guard let sink = self.eventSink else {
+            print("TicketStreamHandler: Warning - eventSink is nil. Cannot send event.")
+            return
+        }
+        // Ensure we send on the main thread if needed, though EventChannel handles this often
+        DispatchQueue.main.async {
+            sink(data)
+        }
+    }
+}
+// --- END ADDED ---

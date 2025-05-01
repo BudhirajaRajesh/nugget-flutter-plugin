@@ -13,13 +13,11 @@ class NuggetFlutterPlugin {
   ///
   /// Delegates to the platform-specific implementation.
   Future<void> initialize({
-    required String apiKey,
     NuggetThemeData? theme,
     NuggetFontData? font,
   }) {
     // Pass parameters, converting optional data classes to Maps using toJson
     return NuggetFlutterPluginPlatform.instance.initialize(
-      apiKey: apiKey,
       theme: theme,
       font: font,
     );
@@ -40,4 +38,14 @@ class NuggetFlutterPlugin {
   /// Stream providing an optional error message when ticket creation fails.
   /// Listen to this stream to get notified of failed ticket creation attempts.
   Stream<String?> get onTicketCreationFailed => NuggetFlutterPluginPlatform.instance.onTicketCreationFailed;
+
+  /// Opens the Nugget chat UI modally, optionally navigating to a specific
+  /// state defined by the [customDeeplink].
+  /// 
+  /// Delegates to the platform-specific implementation.
+  Future<void> openChatWithCustomDeeplink({required String customDeeplink}) {
+    return NuggetFlutterPluginPlatform.instance.openChatWithCustomDeeplink(
+      customDeeplink: customDeeplink,
+    );
+  }
 }
