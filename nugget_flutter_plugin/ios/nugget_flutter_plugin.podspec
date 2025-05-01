@@ -15,7 +15,6 @@ Plugin to integrate Nugget SDK in Flutter.
   s.source           = { :path => '.' }
   s.source_files = 'nugget_flutter_plugin/Sources/nugget_flutter_plugin/**/*'
   s.dependency 'Flutter'
-  s.dependency 'NuggetSDK', :git => 'https://github.com/BudhirajaRajesh/NuggetSDK.git', :tag => '1.1.3'
   s.platform = :ios, '14.0'
 
   # Flutter.framework does not contain a i386 slice.

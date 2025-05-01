@@ -1,6 +1,14 @@
 import 'package:flutter/material.dart';
+// Import the main plugin file, which now exports the handler
+import 'package:nugget_flutter_plugin/nugget_flutter_plugin.dart';
 
 void main() {
+  // Ensure bindings are initialized before calling plugin code
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize the handler for native -> Dart calls
+  NuggetPluginNativeCallbackHandler.initializeHandler();
+
   runApp(const MyApp());
 }
 

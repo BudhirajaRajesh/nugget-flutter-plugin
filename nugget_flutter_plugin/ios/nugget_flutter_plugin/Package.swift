@@ -12,7 +12,7 @@ let package = Package(
         .library(name: "nugget-flutter-plugin", targets: ["nugget_flutter_plugin"])
     ],
     dependencies: [
-        .package(url: "https://github.com/BudhirajaRajesh/NuggetSDK.git", from: "1.1.3"),
+        .package(url: "https://github.com/BudhirajaRajesh/NuggetSDK.git", from: "1.1.13"),
     ],
     targets: [
         .target(

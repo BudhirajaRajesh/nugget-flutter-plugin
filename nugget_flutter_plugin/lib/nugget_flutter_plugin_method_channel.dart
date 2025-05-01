@@ -20,4 +20,23 @@ class MethodChannelNuggetFlutterPlugin extends NuggetFlutterPluginPlatform {
       'customDeeplink': customDeeplink,
     });
   }
+
+  @override
+  Future<void> initialize({
+    required String apiKey,
+    NuggetThemeData? theme,
+    NuggetFontData? font,
+  }) async {
+    // Prepare arguments map, including JSON maps for theme/font if provided
+    final Map<String, dynamic> arguments = {
+      'apiKey': apiKey,
+      'theme': theme?.toJson(), // Call toJson() if theme is not null
+      'font': font?.toJson(),   // Call toJson() if font is not null
+      // Add other necessary parameters here
+    };
+    // Remove null values to avoid sending unnecessary data
+    arguments.removeWhere((key, value) => value == null);
+
+    await methodChannel.invokeMethod('initialize', arguments);
+  }
 }
