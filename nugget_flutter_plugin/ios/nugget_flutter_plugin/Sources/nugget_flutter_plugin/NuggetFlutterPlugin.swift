@@ -30,11 +30,60 @@ public class NuggetFlutterPlugin: NSObject, FlutterPlugin,
     // private let permissionHandler = BasicStreamHandler<Int>()
     // --- END ADDED ---
 
+    // --- Notification Observers ---
+    private var tokenObserver: NSObjectProtocol?
+    private var permissionObserver: NSObjectProtocol?
+    // --- END Notification Observers ---
+
     // Initializer to store the channel
     init(channel: FlutterMethodChannel) {
         self.channel = channel
         super.init()
+        // Add observers when the plugin instance is created
+        addNotificationObservers()
     }
+
+    // --- ADDED: NotificationCenter Handling ---
+    private func addNotificationObservers() {
+        // Define Notification names locally (or import if defined globally)
+        let tokenNotificationName = Notification.Name("AppDidReceivePushToken")
+        let permissionNotificationName = Notification.Name("AppPushPermissionStatusUpdated")
+
+        tokenObserver = NotificationCenter.default.addObserver(forName: tokenNotificationName, object: nil, queue: nil) { [weak self] notification in
+            print("NuggetFlutterPlugin received AppDidReceivePushToken notification")
+            if let token = notification.userInfo?["token"] as? String {
+                self?.tokenHandler.sendEvent(data: token)
+            } else {
+                print("NuggetFlutterPlugin Error: Could not extract token from notification")
+            }
+        }
+
+        permissionObserver = NotificationCenter.default.addObserver(forName: permissionNotificationName, object: nil, queue: nil) { [weak self] notification in
+            print("NuggetFlutterPlugin received AppPushPermissionStatusUpdated notification")
+            if let status = notification.userInfo?["status"] as? Int { // Assuming status is Int
+                self?.permissionHandler.sendEvent(data: status)
+            } else {
+                 print("NuggetFlutterPlugin Error: Could not extract status from notification")
+            }
+        }
+    }
+
+    private func removeNotificationObservers() {
+        if let observer = tokenObserver {
+            NotificationCenter.default.removeObserver(observer)
+            tokenObserver = nil
+        }
+        if let observer = permissionObserver {
+            NotificationCenter.default.removeObserver(observer)
+            permissionObserver = nil
+        }
+    }
+
+    deinit {
+        // Ensure observers are removed when the plugin instance is deallocated
+        removeNotificationObservers()
+    }
+    // --- END NotificationCenter Handling ---
 
     public static func register(with registrar: FlutterPluginRegistrar) {
         let channel = FlutterMethodChannel(name: "nugget_flutter_plugin", binaryMessenger: registrar.messenger())
