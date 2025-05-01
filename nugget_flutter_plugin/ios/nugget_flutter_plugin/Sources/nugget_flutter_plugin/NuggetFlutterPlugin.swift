@@ -10,7 +10,7 @@ public class NuggetFlutterPlugin: NSObject, FlutterPlugin,
                                     NuggetAuthProviderDelegate, 
                                     NuggetThemeProviderDelegate, // Use the actual protocol name
                                     NuggetFontProviderDelegate,  // Use the actual protocol name
-                                    NuggetTicketCreationDelegate { // <-- REVERTED PROTOCOL NAME
+                                    NuggetTicketCreationDelegate { // <-- REMOVED Push Delegate
     
     // Hold the channel for sending messages back to Dart
     let channel: FlutterMethodChannel
@@ -21,8 +21,10 @@ public class NuggetFlutterPlugin: NSObject, FlutterPlugin,
     var fontDataMap: [String: Any]?
     
     // --- ADDED: Stream Handlers ---
-    private let ticketSuccessHandler = TicketStreamHandler()
-    private let ticketFailureHandler = TicketStreamHandler()
+    private let ticketSuccessHandler = EventStreamHandler()
+    private let ticketFailureHandler = EventStreamHandler()
+    private let tokenHandler = EventStreamHandler()          // <-- ADDED
+    private let permissionHandler = EventStreamHandler()     // <-- ADDED
     // TODO: Add handlers for token and permission status later
     // private let tokenHandler = BasicStreamHandler<String>()
     // private let permissionHandler = BasicStreamHandler<Int>()
@@ -47,12 +49,12 @@ public class NuggetFlutterPlugin: NSObject, FlutterPlugin,
         let ticketFailureEventChannel = FlutterEventChannel(name: "nugget_flutter_plugin/onTicketCreationFailed", binaryMessenger: registrar.messenger())
         ticketFailureEventChannel.setStreamHandler(instance.ticketFailureHandler)
         
-        // TODO: Register other event channels (token, permission) here
-        // let tokenEventChannel = FlutterEventChannel(name: "nugget_flutter_plugin/onTokenUpdated", binaryMessenger: registrar.messenger())
-        // tokenEventChannel.setStreamHandler(instance.tokenHandler)
-        // 
-        // let permissionEventChannel = FlutterEventChannel(name: "nugget_flutter_plugin/onPermissionStatusUpdated", binaryMessenger: registrar.messenger())
-        // permissionEventChannel.setStreamHandler(instance.permissionHandler)
+        // Register token and permission channels
+        let tokenEventChannel = FlutterEventChannel(name: "nugget_flutter_plugin/onTokenUpdated", binaryMessenger: registrar.messenger())
+        tokenEventChannel.setStreamHandler(instance.tokenHandler)
+        
+        let permissionEventChannel = FlutterEventChannel(name: "nugget_flutter_plugin/onPermissionStatusUpdated", binaryMessenger: registrar.messenger())
+        permissionEventChannel.setStreamHandler(instance.permissionHandler)
         // --- END ADDED ---
 
         // Register the Platform View Factory
@@ -97,7 +99,7 @@ public class NuggetFlutterPlugin: NSObject, FlutterPlugin,
         // *** TODO: Update the notificationDelegate argument below ***
         self.nuggetFactory = NuggetSDK.initializeNuggetFactory(
             authDelegate: self, 
-            notificationDelegate: .init(), // Pass nil for now
+            notificationDelegate: NuggetPushNotificationsListener(),
             customThemeProviderDelegate: self,
             customFontProviderDelegate: self, 
             ticketCreationDelegate: self 
@@ -177,32 +179,48 @@ public class NuggetFlutterPlugin: NSObject, FlutterPlugin,
         }
     }
 
-    // MARK: - NuggetAuthProviderDelegate Implementation
+   // MARK: - NuggetAuthProviderDelegate Implementation
     public func authManager(requiresAuthInfo completion: @escaping (NuggetAuthUserInfo?, Error?) -> Void) {
-        print("NuggetFlutterPlugin Swift: Delegate method requiresAuthInfo called by SDK. Invoking Dart...")
-        channel.invokeMethod("requireAuthInfo", arguments: nil) { flutterResult in
-            DispatchQueue.main.async {
+        print("NuggetFlutterPlugin Swift: Delegate method requiresAuthInfo called by SDK. Ensuring call to Dart is on main thread...")
+        // Ensure the invokeMethod call happens on the main thread
+        DispatchQueue.main.async { // <-- WRAP HERE
+            self.channel.invokeMethod("requireAuthInfo", arguments: nil) { flutterResult in
+                // ADD PRINT: Confirm this callback block is executed
+                print("NuggetFlutterPlugin Swift: invokeMethod callback received for requireAuthInfo. Result type: \(type(of: flutterResult))")
+                // The result handler from Flutter might not be on main thread,
+                // Call handleAuthCompletion directly from here
                 self.handleAuthCompletion(flutterResult: flutterResult, sdkCompletion: completion)
             }
-        }
+        } // <-- END WRAP
     }
 
-    public func authManager(requestRefreshAuthInfo completion: @escaping (NuggetAuthUserInfo?, Error?) -> Void) {
-        print("NuggetFlutterPlugin Swift: Delegate method requestRefreshAuthInfo called by SDK. Invoking Dart...")
-        channel.invokeMethod("refreshAuthInfo", arguments: nil) { flutterResult in
-             DispatchQueue.main.async {
+     public func authManager(requestRefreshAuthInfo completion: @escaping (NuggetAuthUserInfo?, Error?) -> Void) {
+        print("NuggetFlutterPlugin Swift: Delegate method requestRefreshAuthInfo called by SDK. Ensuring call to Dart is on main thread...")
+        // Ensure the invokeMethod call happens on the main thread
+        DispatchQueue.main.async { // <-- WRAP HERE
+            self.channel.invokeMethod("refreshAuthInfo", arguments: nil) { flutterResult in
+                print("NuggetFlutterPlugin Swift: invokeMethod callback received for refreshAuthInfo. Result type: \(type(of: flutterResult))") // Added log for consistency
+                 // Call handleAuthCompletion directly from here
                  self.handleAuthCompletion(flutterResult: flutterResult, sdkCompletion: completion)
-             }
-        }
+            }
+        } // <-- END WRAP
     }
     
+    // handleAuthCompletion remains unchanged, but the comment about its thread is less relevant
+    // as we now ensure it's called on the main thread from the invokeMethod result handler.
     private func handleAuthCompletion(flutterResult: Any?, sdkCompletion: @escaping (NuggetAuthUserInfo?, Error?) -> Void) {
+        // ADD PRINT: Confirm function entry
+        print("NuggetFlutterPlugin Swift: Entering handleAuthCompletion.")
+
         guard let resultData = flutterResult else {
              print("NuggetFlutterPlugin Swift: Auth completion - Dart returned nil result (unexpected).")
              let error = NSError(domain: "PluginError", code: -2, userInfo: [NSLocalizedDescriptionKey: "Auth failed: Dart returned nil"])
              sdkCompletion(nil, error)
              return
          }
+
+         // ADD THIS PRINT: Log the raw result
+         print("NuggetFlutterPlugin Swift: Auth completion - Received flutterResult: \(resultData)")
 
          if let error = resultData as? FlutterError {
              print("NuggetFlutterPlugin Swift: Auth completion - Dart returned error: \(error.code) - \(error.message ?? "")")
@@ -213,7 +231,8 @@ public class NuggetFlutterPlugin: NSObject, FlutterPlugin,
                                             "FlutterErrorDetails": error.details ?? "N/A"])
              sdkCompletion(nil, nsError)
          } else if let dict = resultData as? [String: Any] {
-             print("NuggetFlutterPlugin Swift: Auth completion - Dart returned data. Parsing...")
+             // ADD THIS PRINT: Log the dictionary before parsing
+             print("NuggetFlutterPlugin Swift: Auth completion - Dart returned data. Attempting to parse dictionary: \(dict)") 
              // Attempt to parse the dictionary using the Swift struct
              // *** TODO: Verify SwiftNuggetAuthUserInfo matches NuggetAuthUserInfo protocol ***
              if let userInfo = SwiftNuggetAuthUserInfo(fromDictionary: dict) {
@@ -230,9 +249,6 @@ public class NuggetFlutterPlugin: NSObject, FlutterPlugin,
               sdkCompletion(nil, error)
          }
     }
-
-    // MARK: - NuggetPushNotificationsListener Handling
-    // *** We removed conformance. Listener logic needs to be in a separate object. ***
 
     // MARK: - NuggetTicketCreationDelegate Implementation
     public func ticketCreationSucceeded(with conversationID: String) {
@@ -380,14 +396,18 @@ struct SwiftNuggetAuthUserInfo: NuggetAuthUserInfo {
     let displayName: String
     
     init?(fromDictionary dict: [String: Any]) {
+        // ADD THESE PRINTS: Log dictionary and raw token value/type
+        print("SwiftNuggetAuthUserInfo init: Attempting to parse dict: \(dict)")
+        let rawToken = dict["accessToken"]
+        print("SwiftNuggetAuthUserInfo init: Raw value for key 'accessToken': \(String(describing: rawToken)), Type: \(type(of: rawToken))")
+
         guard let clientID = dict["clientID"] as? Int,
               let accessToken = dict["accessToken"] as? String,
               let userID = dict["userID"] as? String, 
-              // let userName = dict["userName"] as? String, <- REMOVED GUARD let (will assign optional below)
               let photoURL = dict["photoURL"] as? String,
               let displayName = dict["displayName"] as? String
         else {
-            print("SwiftNuggetAuthUserInfo: Failed to parse dictionary from Dart")
+            print("SwiftNuggetAuthUserInfo: Failed to parse dictionary from Dart (Guard failed)") // Added note
             return nil
         }
         self.clientID = clientID
@@ -396,6 +416,7 @@ struct SwiftNuggetAuthUserInfo: NuggetAuthUserInfo {
         self.userName = dict["userName"] as? String // Assign optional value
         self.photoURL = photoURL
         self.displayName = displayName
+        print("SwiftNuggetAuthUserInfo init: Parsing successful.") // Added success log
     }
 }
 
@@ -471,7 +492,7 @@ extension NuggetFontSizes {
 
 // --- ADDED: Generic Stream Handler ---
 /// A basic stream handler that stores the event sink and provides a method to send events.
-class TicketStreamHandler: NSObject, FlutterStreamHandler {
+class EventStreamHandler: NSObject, FlutterStreamHandler {
     private var eventSink: FlutterEventSink?
 
     /// Called when Flutter starts listening.

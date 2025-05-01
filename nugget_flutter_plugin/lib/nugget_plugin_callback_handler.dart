@@ -79,18 +79,25 @@ class NuggetPluginNativeCallbackHandler {
     switch (call.method) {
       case 'requireAuthInfo':
         try {
-          // `await`: Pauses execution of this function *until* the awaited `Future` completes.
-          // If the Future completes with a value, `await` returns that value.
-          // If the Future completes with an error, `await` *throws* that error.
-          // This makes asynchronous code look more synchronous and avoids nested callbacks ("callback hell").
-          // Map<String, dynamic>? authInfoMap = await _getAuthInfoFromDartAndConvertToMap();
-          // return authInfoMap; // Return the result (wrapped in a Future implicitly by async).
-
-          // Placeholder logic returning a Map directly for simplicity here
           print("NuggetPlugin: Dart executing requireAuthInfo logic...");
-          await Future.delayed(Duration(milliseconds: 10)); // Simulate async work
-          // This Map structure must match what the Swift side expects
-           return {'clientID': 1, 'accessToken': 'dummy-dart-token', 'userId': 'dart-id', 'displayName':'Darter', 'userName':'darter', 'photoURL':''};
+          // You can keep or remove the delay
+          // await Future.delayed(Duration(milliseconds: 3));
+
+          // Define the map to be returned
+          final Map<String, dynamic> authInfoMap = {
+            'clientID': 1,
+            'accessToken': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcHBWZXJzaW9uIjoiIiwiYnVzaW5lc3NJZCI6MSwiY2xpZW50SWQiOjEsImNsaWVudF9uYW1lIjoiem9tYXRvIiwiZGlzcGxheU5hbWUiOiJQcmFuYXYiLCJlbWFpbCI6InByYW5hdkBudWdnZXQuY29tIiwiZXhwIjoxNzQ2MTAxMTA5LCJob3N0TmFtZSI6ImRhc2hib2FyZC5udWdnZXQuY29tIiwiaWF0IjoxNzQ2MDE0NzA5LCJwaG9uZU51bWJlciI6IiIsInBob3RvVVJMIjoiIiwic291cmNlIjoiIiwidGVuYW50SUQiOjEsInVpZCI6InByYW5hdi1uZXctdGVzdDIifQ.6yVbug9kDlgt8yyHaoPEqKhlnahdAy2BkAPFb6A1LxM',
+             'userID': 'dart_user_id_456', // Correct key
+             'displayName':'Darter',
+             'userName':'darter',
+             'photoURL':''
+          };
+
+          // *** ADD THIS PRINT STATEMENT ***
+          print("NuggetPlugin: Dart returning auth map: $authInfoMap");
+
+          // Return the created map
+          return authInfoMap;
 
         } catch (e) {
           // Handle errors during the Dart execution.
@@ -108,13 +115,24 @@ class NuggetPluginNativeCallbackHandler {
 
       case 'refreshAuthInfo':
         try {
-          // Map<String, dynamic>? refreshedInfoMap = await _refreshAuthInfoFromDartAndConvertToMap();
-          // return refreshedInfoMap;
-
           // Placeholder logic
           print("NuggetPlugin: Dart executing refreshAuthInfo logic...");
-          await Future.delayed(Duration(milliseconds: 10));
-           return {'clientID': 1, 'accessToken': 'refreshed-dummy-dart-token', 'userId': 'dart-id', 'displayName':'Darter', 'userName':'darter', 'photoURL':''};
+          // await Future.delayed(Duration(milliseconds: 3));
+          
+          // Define the map to be returned (also correct key here)
+          final Map<String, dynamic> refreshedInfoMap = {
+            'clientID': 1,
+            'accessToken': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcHBWZXJzaW9uIjoiIiwiYnVzaW5lc3NJZCI6MSwiY2xpZW50SWQiOjEsImNsaWVudF9uYW1lIjoiem9tYXRvIiwiZGlzcGxheU5hbWUiOiJQcmFuYXYiLCJlbWFpbCI6InByYW5hdkBudWdnZXQuY29tIiwiZXhwIjoxNzQ2MTAxMTA5LCJob3N0TmFtZSI6ImRhc2hib2FyZC5udWdnZXQuY29tIiwiaWF0IjoxNzQ2MDE0NzA5LCJwaG9uZU51bWJlciI6IiIsInBob3RvVVJMIjoiIiwic291cmNlIjoiIiwidGVuYW50SUQiOjEsInVpZCI6InByYW5hdi1uZXctdGVzdDIifQ.6yVbug9kDlgt8yyHaoPEqKhlnahdAy2BkAPFb6A1LxM',
+             'userID': 'dart_user_id_456', // Correct key
+             'displayName':'Darter',
+             'userName':'darter',
+             'photoURL':''
+          };
+          
+          // *** ADD PRINT HERE TOO for consistency ***
+          print("NuggetPlugin: Dart returning refreshed auth map: $refreshedInfoMap");
+          
+          return refreshedInfoMap;
 
         } catch (e) {
            print("NuggetPlugin: Error in refreshAuthInfo: $e");
