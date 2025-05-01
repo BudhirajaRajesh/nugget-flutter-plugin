@@ -10,8 +10,13 @@ import 'package:flutter/services.dart';
 /// Ensure the Nugget SDK has been initialized via `NuggetFlutterPlugin().initialize()`
 /// before attempting to display this widget.
 class NuggetChatView extends StatefulWidget {
+  /// Optional deeplink string to initialize the chat view with a specific state.
+  final String? initialDeeplink;
+
   /// Creates a widget that displays the native Nugget chat view.
-  const NuggetChatView({super.key});
+  ///
+  /// An optional [initialDeeplink] can be provided.
+  const NuggetChatView({super.key, this.initialDeeplink});
 
   @override
   State<NuggetChatView> createState() => _NuggetChatViewState();
@@ -22,12 +27,15 @@ class _NuggetChatViewState extends State<NuggetChatView> {
   // registered in the native iOS code (AppDelegate.swift or similar).
   final String viewType = 'com.yourcompany.nugget/chat_view'; // Use a unique name
 
-  // Pass creation parameters if needed by the native view factory.
-  // For now, assume none are needed, but this map can be populated.
-  final Map<String, dynamic> creationParams = <String, dynamic>{};
-
   @override
   Widget build(BuildContext context) {
+    // Pass creation parameters if needed by the native view factory.
+    final Map<String, dynamic> creationParams = <String, dynamic>{
+      // Only add the deeplink key if initialDeeplink is provided and not empty
+      if (widget.initialDeeplink != null && widget.initialDeeplink!.isNotEmpty) 
+        'deeplink': widget.initialDeeplink!,
+    };
+
     // Platform Views are only available on specific platforms.
     if (Platform.isIOS) {
       return UiKitView(

@@ -1,6 +1,20 @@
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import 'nugget_flutter_plugin_method_channel.dart';
+// Removed imports for non-existent files
+// import 'nugget_enums.dart';
+// import 'nugget_theme_data.dart';
+// import 'nugget_font_data.dart';
+
+// Removed exports for non-existent files
+// export 'nugget_enums.dart';
+// export 'nugget_theme_data.dart';
+// export 'nugget_font_data.dart';
+
+// Export the necessary enums and data classes defined within this file
+export 'nugget_flutter_plugin_platform_interface.dart' 
+    show NuggetPushPermissionStatus, NuggetInterfaceStyle, NuggetFontWeight, 
+         NuggetFontSize, NuggetThemeData, NuggetFontData;
 
 abstract class NuggetFlutterPluginPlatform extends PlatformInterface {
   /// Constructs a NuggetFlutterPluginPlatform.
@@ -22,15 +36,6 @@ abstract class NuggetFlutterPluginPlatform extends PlatformInterface {
   static set instance(NuggetFlutterPluginPlatform instance) {
     PlatformInterface.verifyToken(instance, _token);
     _instance = instance;
-  }
-
-  /// Opens the chat interface using a specific client token and deeplink.
-  ///
-  /// Returns a [Future<void>] because platform channel calls are asynchronous.
-  /// This allows the caller to `await` the completion of the call and handle
-  /// potential [PlatformException]s using `try-catch`.
-  Future<void> openChatWithCustomDeeplink({required String clientToken, required String customDeeplink}) {
-    throw UnimplementedError('openChatWithCustomDeeplink() has not been implemented');
   }
 
   /// Initializes the Nugget SDK with necessary configurations.
