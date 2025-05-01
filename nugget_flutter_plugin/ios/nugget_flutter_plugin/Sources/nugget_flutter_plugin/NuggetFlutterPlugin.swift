@@ -42,8 +42,6 @@ public class NuggetFlutterPlugin: NSObject, FlutterPlugin,
         switch call.method {
         case "initialize":
             handleInitialize(call: call, result: result)
-        case "openChatWithCustomDeeplink":
-             handleOpenChatWithCustomDeeplink(call: call, result: result)
         default:
             result(FlutterMethodNotImplemented)
         }
@@ -86,28 +84,6 @@ public class NuggetFlutterPlugin: NSObject, FlutterPlugin,
              print("NuggetFlutterPlugin Swift: NuggetSDK Initialization Failed.")
             result(FlutterError(code: "INIT_FAILED", message: "Native NuggetSDK initialization returned nil", details: nil))
         }
-    }
-
-    private func handleOpenChatWithCustomDeeplink(call: FlutterMethodCall, result: @escaping FlutterResult) {
-         guard let args = call.arguments as? [String: Any], 
-               let clientToken = args["clientToken"] as? String,
-               let customDeeplink = args["customDeeplink"] as? String else {
-             result(FlutterError(code: "INVALID_ARGS", message: "Missing required arguments: clientToken or customDeeplink", details: nil))
-             return
-         }
-         
-         // Ensure factory is initialized
-         guard let factory = self.nuggetFactory else {
-             result(FlutterError(code: "NOT_INITIALIZED", message: "NuggetSDK not initialized. Call initialize first.", details: nil))
-             return
-         }
-
-         print("NuggetFlutterPlugin Swift: Calling openChatWithCustomDeeplink...")
-         // Call the native SDK method 
-         // *** TODO: Verify this method name is correct ***
-         factory.contentViewController(deeplink: customDeeplink)
-         
-         result(nil) // Indicate success (method likely doesn't return anything)
     }
 
     // MARK: - NuggetAuthProviderDelegate Implementation
@@ -265,27 +241,31 @@ class NuggetChatPlatformView: NSObject, FlutterPlatformView {
             return
         }
 
-        // *** TODO: Replace `getChatViewController()` with actual method name ***
-        /* <- COMMENT OUT START
-        guard let chatVC = factory.getChatViewController() else { 
-             print("NuggetChatPlatformView Error: Failed to get chat view controller.")
-             // ... add error label ...
+        // Parse arguments to get deeplink, default to empty string if not provided
+        let creationArgs = args as? [String: Any]
+        let deeplink = creationArgs?["deeplink"] as? String ?? "" // Default to empty string
+        print("NuggetChatPlatformView: Initializing with deeplink: '\(deeplink)'")
+
+        // Get the Chat View Controller from the Nugget SDK Factory using the deeplink
+        guard let chatVC = factory.contentViewController(deeplink: deeplink) else { 
+             print("NuggetChatPlatformView Error: Failed to get chat view controller from factory.contentViewController(deeplink:).")
+             // TODO: Add error display to _view
              return
         }
-        */ // <- COMMENT OUT END
         
-        // self.chatViewController = chatVC  <- COMMENT OUT
+        self.chatViewController = chatVC
         
-        /* <- COMMENT OUT START
+        // Add the native view controller's view to our container view
         if let chatView = chatVC.view {
             chatView.frame = _view.bounds 
+            // Fix: Explicitly specify UIView.AutoresizingMask
             chatView.autoresizingMask = [UIView.AutoresizingMask.flexibleWidth, UIView.AutoresizingMask.flexibleHeight]
             _view.addSubview(chatView)
              print("NuggetChatPlatformView: Native chat view added.")
         } else {
-            print("NuggetChatPlatformView Error: Chat view controller\'s view is nil.")
+            print("NuggetChatPlatformView Error: Chat view controller's view is nil.")
+            // TODO: Add error display to _view
         }
-        */ // <- COMMENT OUT END
     }
 
     func view() -> UIView {
