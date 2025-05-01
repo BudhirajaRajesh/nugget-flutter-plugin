@@ -86,7 +86,7 @@ class NuggetPluginNativeCallbackHandler {
           // Define the map to be returned
           final Map<String, dynamic> authInfoMap = {
             'clientID': 1,
-            'accessToken': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcHBWZXJzaW9uIjoiIiwiYnVzaW5lc3NJZCI6MSwiY2xpZW50SWQiOjEsImNsaWVudF9uYW1lIjoiem9tYXRvIiwiZGlzcGxheU5hbWUiOiJQcmFuYXYiLCJlbWFpbCI6InByYW5hdkBudWdnZXQuY29tIiwiZXhwIjoxNzQ2MTAxMTA5LCJob3N0TmFtZSI6ImRhc2hib2FyZC5udWdnZXQuY29tIiwiaWF0IjoxNzQ2MDE0NzA5LCJwaG9uZU51bWJlciI6IiIsInBob3RvVVJMIjoiIiwic291cmNlIjoiIiwidGVuYW50SUQiOjEsInVpZCI6InByYW5hdi1uZXctdGVzdDIifQ.6yVbug9kDlgt8yyHaoPEqKhlnahdAy2BkAPFb6A1LxM',
+            'accessToken': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcHBWZXJzaW9uIjoiIiwiYnVzaW5lc3NJZCI6MSwiY2xpZW50SWQiOjEsImNsaWVudF9uYW1lIjoiem9tYXRvIiwiZGlzcGxheU5hbWUiOiJQcmFuYXYiLCJlbWFpbCI6InByYW5hdkBudWdnZXQuY29tIiwiZXhwIjoxNzQ2MTg3ODM1LCJob3N0TmFtZSI6ImRhc2hib2FyZC5udWdnZXQuY29tIiwiaWF0IjoxNzQ2MTAxNDM1LCJwaG9uZU51bWJlciI6IiIsInBob3RvVVJMIjoiIiwic291cmNlIjoiIiwidGVuYW50SUQiOjEsInVpZCI6InByYW5hdi1uZXctdGVzdDIifQ.5bKjj1noHQQY9ac2rVd5EpMqM-de1i02MgecoRqtuho',
              'userID': 'dart_user_id_456', // Correct key
              'displayName':'Darter',
              'userName':'darter',
@@ -122,7 +122,7 @@ class NuggetPluginNativeCallbackHandler {
           // Define the map to be returned (also correct key here)
           final Map<String, dynamic> refreshedInfoMap = {
             'clientID': 1,
-            'accessToken': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcHBWZXJzaW9uIjoiIiwiYnVzaW5lc3NJZCI6MSwiY2xpZW50SWQiOjEsImNsaWVudF9uYW1lIjoiem9tYXRvIiwiZGlzcGxheU5hbWUiOiJQcmFuYXYiLCJlbWFpbCI6InByYW5hdkBudWdnZXQuY29tIiwiZXhwIjoxNzQ2MTAxMTA5LCJob3N0TmFtZSI6ImRhc2hib2FyZC5udWdnZXQuY29tIiwiaWF0IjoxNzQ2MDE0NzA5LCJwaG9uZU51bWJlciI6IiIsInBob3RvVVJMIjoiIiwic291cmNlIjoiIiwidGVuYW50SUQiOjEsInVpZCI6InByYW5hdi1uZXctdGVzdDIifQ.6yVbug9kDlgt8yyHaoPEqKhlnahdAy2BkAPFb6A1LxM',
+            'accessToken': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcHBWZXJzaW9uIjoiIiwiYnVzaW5lc3NJZCI6MSwiY2xpZW50SWQiOjEsImNsaWVudF9uYW1lIjoiem9tYXRvIiwiZGlzcGxheU5hbWUiOiJQcmFuYXYiLCJlbWFpbCI6InByYW5hdkBudWdnZXQuY29tIiwiZXhwIjoxNzQ2MTg3ODM1LCJob3N0TmFtZSI6ImRhc2hib2FyZC5udWdnZXQuY29tIiwiaWF0IjoxNzQ2MTAxNDM1LCJwaG9uZU51bWJlciI6IiIsInBob3RvVVJMIjoiIiwic291cmNlIjoiIiwidGVuYW50SUQiOjEsInVpZCI6InByYW5hdi1uZXctdGVzdDIifQ.5bKjj1noHQQY9ac2rVd5EpMqM-de1i02MgecoRqtuho',
              'userID': 'dart_user_id_456', // Correct key
              'displayName':'Darter',
              'userName':'darter',

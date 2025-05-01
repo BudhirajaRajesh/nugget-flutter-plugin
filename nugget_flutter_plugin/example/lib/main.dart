@@ -29,19 +29,38 @@ class _MyAppState extends State<MyApp> {
 
   bool _isInitialized = false;
   String _status = 'SDK Not Initialized';
-  // Callbacks state and listeners removed
+  
+  // --- ADDED State for Push Info ---
+  String? _latestToken = "Not received yet";
+  NuggetPushPermissionStatus? _latestPermissionStatus;
+  // --- END ADDED State ---
+  
+  // REMOVED Callbacks state (Keep if needed for Ticket/Other callbacks)
+  // final List<String> _callbackMessages = [];
+  // StreamSubscription? _ticketSuccessSubscription;
+  // StreamSubscription? _ticketFailureSubscription;
+  
+  // --- ADDED Subscriptions for Push Info ---
+  StreamSubscription? _tokenSubscription;
+  StreamSubscription? _permissionStatusSubscription;
+  // --- END ADDED Subscriptions ---
+
+  // TODO: Add subscriptions for auth and other streams if needed
+  // (If callbacks are needed for other logic, keep the listeners but remove UI)
 
   @override
   void initState() {
     super.initState();
     _loadSavedDeeplink();
-    // _listenToCallbacks(); // Call removed
+    _listenToPushEvents();
   }
 
   @override
   void dispose() {
     _deeplinkController.dispose();
-    // Subscriptions cancellation removed
+    // Cancel push subscriptions
+    _tokenSubscription?.cancel();
+    _permissionStatusSubscription?.cancel();
     super.dispose();
   }
 
@@ -178,6 +197,11 @@ class _MyAppState extends State<MyApp> {
                   ), // End of ElevatedButton (Open Chat)
                   const SizedBox(height: 10),
                   Text('Status: $_status'),
+                  const SizedBox(height: 10),
+                  Text('Push Token: ${_latestToken ?? "N/A"}'), // Display token
+                  const SizedBox(height: 10),
+                  // Display permission status nicely
+                  Text('Permission Status: ${_latestPermissionStatus?.name ?? "N/A"}'), 
                 ], // End of children list for Column
               ), // End of Column
             ); // End of Padding (Return value for Builder's builder function)
@@ -186,4 +210,60 @@ class _MyAppState extends State<MyApp> {
       ), // End of Scaffold widget
     ); // End of MaterialApp widget
   } // End of build method
+
+  // --- ADDED Push Event Listener Setup ---
+  void _listenToPushEvents() {
+    _tokenSubscription = _plugin.onTokenUpdated.listen(
+      (token) {
+        if (mounted) {
+          setState(() {
+            _latestToken = token;
+          });
+          print("Example App: Received Token: $token");
+        }
+      },
+      onError: (error) {
+         if (mounted) {
+          setState(() {
+            _latestToken = "Error: $error";
+          });
+           print("Example App: Token Stream Error: $error");
+        }
+      },
+      onDone: () {
+         if (mounted) { // Should not happen for broadcast streams unless plugin is disposed
+           setState(() {
+              _latestToken = "Stream Closed";
+           });
+            print("Example App: Token Stream Closed");
+         }
+      }
+    );
+
+    _permissionStatusSubscription = _plugin.onPermissionStatusUpdated.listen(
+      (status) {
+         if (mounted) {
+          setState(() {
+            _latestPermissionStatus = status;
+          });
+           print("Example App: Received Permission Status: $status");
+        }
+      },
+       onError: (error) {
+         if (mounted) {
+           setState(() {
+             _latestPermissionStatus = null; // Indicate error state
+             // Maybe display error differently?
+           });
+           print("Example App: Permission Status Stream Error: $error");
+         }
+       },
+       onDone: () {
+          if (mounted) {
+            print("Example App: Permission Status Stream Closed");
+          }
+       }
+    );
+  }
+  // --- END ADDED Listener Setup ---
 } // End of _MyAppState class
